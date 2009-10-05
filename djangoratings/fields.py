@@ -141,7 +141,9 @@ class RatingManager(object):
         except Vote.DoesNotExist:
             kwargs.update(defaults)
             rating, created = Vote.objects.create(**kwargs), True
-            
+        except Vote.MultipleObjectsReturned:
+            rating, created = False, False
+        
         has_changed = False
         if not created:
             if self.field.can_change_vote:
@@ -150,6 +152,7 @@ class RatingManager(object):
                 rating.score = score
                 rating.save()
             elif self.field.allow_multiple_votes:
+                kwargs.update(defaults)
                 rating = Vote.objects.create(**kwargs)
                 has_changed = False
             else:
