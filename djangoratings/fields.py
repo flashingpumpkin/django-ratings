@@ -43,7 +43,7 @@ class RatingManager(object):
         Returns the weighted percentage of the score from min-max values"""
         if not (self.votes and self.score):
             return 0
-        return 100/self.field.range*self.get_rating()
+        return 100 / self.field.range * self.get_rating()
     
     def get_real_percent(self):
         """get_real_percent()
@@ -51,7 +51,7 @@ class RatingManager(object):
         Returns the unmodified percentage of the score based on a 0-point scale."""
         if not (self.votes and self.score):
             return 0
-        return 100/self.field.range*self.get_real_rating()
+        return 100 / self.field.range * self.get_real_rating()
     
     def get_ratings(self):
         """get_ratings()
@@ -65,13 +65,13 @@ class RatingManager(object):
         Returns the weighted average rating."""
         if not (self.votes and self.score):
             return 0
-        return float(self.score)/(self.votes+self.field.weight)
+        return float(self.score) / (self.votes + self.field.weight)
     
     def get_opinion_percent(self):
         """get_opinion_percent()
         
         Returns a neutral-based percentage."""
-        return (self.get_percent()+100)/2
+        return (self.get_percent() + 100) / 2
 
     def get_real_rating(self):
         """get_rating()
@@ -79,16 +79,16 @@ class RatingManager(object):
         Returns the unmodified average rating."""
         if not (self.votes and self.score):
             return 0
-        return float(self.score)/self.votes
+        return float(self.score) / self.votes
     
     def get_rating_for_user(self, user, ip_address):
         """get_rating_for_user(user, ip_address)
         
         Returns the rating for a user or anonymous IP."""
         kwargs = dict(
-            content_type    = self.get_content_type(),
-            object_id       = self.instance.id,
-            key             = self.field.key,
+            content_type=self.get_content_type(),
+            object_id=self.instance.id,
+            key=self.field.key,
         )
 
         if not (user and user.is_authenticated()):
@@ -123,15 +123,15 @@ class RatingManager(object):
             user = None
         
         defaults = dict(
-            score = score,
-            ip_address = ip_address,
+            score=score,
+            ip_address=ip_address,
         )
         
         kwargs = dict(
-            content_type    = self.get_content_type(),
-            object_id       = self.instance.id,
-            key             = self.field.key,
-            user            = user,
+            content_type=self.get_content_type(),
+            object_id=self.instance.id,
+            key=self.field.key,
+            user=user,
         )
         if not user:
             kwargs['ip_address'] = ip_address
@@ -149,6 +149,9 @@ class RatingManager(object):
                 self.score -= rating.score
                 rating.score = score
                 rating.save()
+            elif self.field.allow_multiple_votes:
+                rating = Vote.objects.create(**kwargs)
+                has_changed = False
             else:
                 raise CannotChangeVote()
         else:
@@ -160,14 +163,14 @@ class RatingManager(object):
             #setattr(self.instance, self.field.name, Rating(score=self.score, votes=self.votes))
             
             defaults = dict(
-                score   = self.score,
-                votes   = self.votes,
+                score=self.score,
+                votes=self.votes,
             )
             
             kwargs = dict(
-                content_type    = self.get_content_type(),
-                object_id       = self.instance.id,
-                key             = self.field.key,
+                content_type=self.get_content_type(),
+                object_id=self.instance.id,
+                key=self.field.key,
             )
             
             try:
@@ -233,6 +236,7 @@ class RatingField(IntegerField):
         self.weight = kwargs.pop('weight', 0)
         self.range = kwargs.pop('range', 2)
         self.allow_anonymous = kwargs.pop('allow_anonymous', False)
+        self.allow_multiple_votes = kwargs.pop('allow_multiple_votes', False)
         kwargs['editable'] = False
         kwargs['default'] = 0
         kwargs['blank'] = True

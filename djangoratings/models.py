@@ -6,19 +6,19 @@ from django.contrib.auth.models import User
 import datetime
 
 class Vote(models.Model):
-    content_type    = models.ForeignKey(ContentType, related_name="votes")
-    object_id       = models.PositiveIntegerField()
-    key             = models.CharField(max_length=32)
-    score           = models.IntegerField()
-    user            = models.ForeignKey(User, blank=True, null=True, related_name="votes")
-    ip_address      = models.IPAddressField()
-    date_added      = models.DateTimeField(default=datetime.datetime.now, editable=False)
-    date_changed    = models.DateTimeField(default=datetime.datetime.now, editable=False)
+    content_type = models.ForeignKey(ContentType, related_name="votes")
+    object_id = models.PositiveIntegerField()
+    key = models.CharField(max_length=32)
+    score = models.IntegerField()
+    user = models.ForeignKey(User, blank=True, null=True, related_name="votes")
+    ip_address = models.IPAddressField()
+    date_added = models.DateTimeField(default=datetime.datetime.now, editable=False)
+    date_changed = models.DateTimeField(default=datetime.datetime.now, editable=False)
 
-    content_object  = generic.GenericForeignKey()
+    content_object = generic.GenericForeignKey()
 
-    class Meta:
-        unique_together = (('content_type', 'object_id', 'key', 'user', 'ip_address'))
+    #class Meta:
+        #unique_together = (('content_type', 'object_id', 'key', 'user', 'ip_address'))
 
     def __unicode__(self):
         return "%s voted %s on %s" % (self.user_display, self.score, self.content_object)
@@ -40,13 +40,13 @@ class Vote(models.Model):
     partial_ip_address = property(partial_ip_address)
 
 class Score(models.Model):
-    content_type    = models.ForeignKey(ContentType)
-    object_id       = models.PositiveIntegerField()
-    key             = models.CharField(max_length=32)
-    score           = models.IntegerField()
-    votes           = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    key = models.CharField(max_length=32)
+    score = models.IntegerField()
+    votes = models.PositiveIntegerField()
 
-    content_object  = generic.GenericForeignKey()
+    content_object = generic.GenericForeignKey()
 
     class Meta:
         unique_together = (('content_type', 'object_id', 'key'),)
