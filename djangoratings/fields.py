@@ -142,49 +142,49 @@ class RatingManager(object):
             kwargs.update(defaults)
             rating, created = Vote.objects.create(**kwargs), True
         except Vote.MultipleObjectsReturned:
-            rating, created = False, False
+            rating, created = None, False
         
-        has_changed = False
         if not created:
-            if self.field.can_change_vote:
-                has_changed = True
+            if self.field.can_change_vote and rating is not None:
                 self.score -= rating.score
                 rating.score = score
+                self.score += rating.score
                 rating.save()
-            elif self.field.allow_multiple_votes:
+            elif self.field.allow_multi_vote:
                 kwargs.update(defaults)
                 rating = Vote.objects.create(**kwargs)
-                has_changed = False
+                self.score += rating.score
+                self.votes += 1
             else:
                 raise CannotChangeVote()
-        else:
-            has_changed = True
-            self.votes += 1
-        if has_changed:
+        elif created:
             self.score += rating.score
-            self.instance.save()
-            #setattr(self.instance, self.field.name, Rating(score=self.score, votes=self.votes))
+            self.votes += 1
             
-            defaults = dict(
-                score=self.score,
-                votes=self.votes,
-            )
-            
-            kwargs = dict(
-                content_type=self.get_content_type(),
-                object_id=self.instance.id,
-                key=self.field.key,
-            )
-            
-            try:
-                score, created = Score.objects.get(**kwargs), False
-            except Score.DoesNotExist:
-                kwargs.update(defaults)
-                score, created = Score.objects.create(**kwargs), True
-            
-            if not created:
-                score.__dict__.update(defaults)
-                score.save()
+        
+        defaults = dict(
+            score=self.score,
+            votes=self.votes,
+        )
+        
+        kwargs = dict(
+            content_type=self.get_content_type(),
+            object_id=self.instance.id,
+            key=self.field.key,
+        )
+        
+        try:
+            score, created = Score.objects.get(**kwargs), False
+        except Score.DoesNotExist:
+            kwargs.update(defaults)
+            score, created = Score.objects.create(**kwargs), True
+        
+        if not created:
+            score.__dict__.update(defaults)
+            score.save()
+        
+        self.instance.save()
+
 
     def _get_votes(self, default=None):
         return getattr(self.instance, self.votes_field_name, default)
@@ -239,7 +239,7 @@ class RatingField(IntegerField):
         self.weight = kwargs.pop('weight', 0)
         self.range = kwargs.pop('range', 2)
         self.allow_anonymous = kwargs.pop('allow_anonymous', False)
-        self.allow_multiple_votes = kwargs.pop('allow_multiple_votes', False)
+        self.allow_multi_vote = kwargs.pop('allow_multi_vote', False)
         kwargs['editable'] = False
         kwargs['default'] = 0
         kwargs['blank'] = True
